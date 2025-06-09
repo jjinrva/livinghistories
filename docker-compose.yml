@@ -1,0 +1,53 @@
+
+services:
+  # Nginx Reverse Proxy - works with system cloudflared
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - web-proxy
+    restart: unless-stopped
+    depends_on:
+      - livinghistories-web
+
+  # Living Histories Coming Soon Page
+  livinghistories-web:
+    image: nginx:alpine
+    container_name: livinghistories-web
+    volumes:
+      - ./web/html:/usr/share/nginx/html:ro
+      - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - web-proxy
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  # Future: Living Histories API Backend
+  # livinghistories-api:
+  #   image: livinghistories/api:latest
+  #   container_name: livinghistories-api
+  #   environment:
+  #     - DATABASE_URL=postgresql://user:pass@external-db-vm:5432/livinghistories
+  #     - AI_INFERENCE_URL=http://external-gpu-pc:8000/v1/chat
+  #   volumes:
+  #     - ./api/logs:/app/logs
+  #   networks:
+  #     - web-proxy
+  #   restart: unless-stopped
+  #   expose:
+  #     - "8000"
+
+networks:
+  web-proxy:
+    driver: bridge
+    name: web-proxy
+
+volumes:
+  nginx-logs:

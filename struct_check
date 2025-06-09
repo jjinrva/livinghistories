@@ -1,0 +1,324 @@
+#!/usr/bin/env python3
+"""
+Living Histories Project Structure Checker
+Creates directories and reports missing files
+"""
+
+import os
+import json
+from pathlib import Path
+from datetime import datetime
+
+# Define the complete project structure
+PROJECT_STRUCTURE = {
+    "directories": [
+        "app",
+        "app/backend",
+        "app/backend/app",
+        "app/backend/app/core",
+        "app/backend/app/models", 
+        "app/backend/app/auth",
+        "app/backend/app/schemas",
+        "app/backend/app/crud",
+        "app/backend/app/api",
+        "app/backend/app/api/v1",
+        "app/backend/app/api/v1/endpoints",
+        "app/backend/app/utils",
+        "app/frontend",
+        "app/frontend/src",
+        "app/frontend/src/pages",
+        "app/frontend/src/pages/onboarding",
+        "app/frontend/src/pages/admin",
+        "app/frontend/src/components",
+        "app/frontend/src/components/ui",
+        "app/frontend/src/components/dashboard",
+        "app/frontend/src/components/auth",
+        "app/frontend/src/components/onboarding",
+        "app/frontend/src/components/admin",
+        "app/frontend/src/hooks",
+        "app/frontend/src/lib",
+        "app/frontend/src/types",
+        "app/frontend/src/context",
+        "app/frontend/public",
+    ],
+    "backend_files": {
+        # Main application files
+        "app/backend/app/__init__.py": "empty",
+        "app/backend/app/main.py": "artifact_available",
+        
+        # Core configuration
+        "app/backend/app/core/__init__.py": "empty",
+        "app/backend/app/core/config.py": "artifact_available",
+        "app/backend/app/core/database.py": "artifact_available",
+        
+        # Models
+        "app/backend/app/models/__init__.py": "artifact_available",
+        "app/backend/app/models/user.py": "artifact_available",
+        
+        # Authentication
+        "app/backend/app/auth/__init__.py": "empty",
+        "app/backend/app/auth/auth.py": "artifact_available",
+        "app/backend/app/auth/deps.py": "artifact_available",
+        
+        # Schemas (Pydantic models)
+        "app/backend/app/schemas/__init__.py": "empty",
+        "app/backend/app/schemas/auth.py": "needs_creation",
+        "app/backend/app/schemas/user.py": "needs_creation",
+        
+        # CRUD operations
+        "app/backend/app/crud/__init__.py": "empty",
+        "app/backend/app/crud/user.py": "needs_creation",
+        
+        # API routes
+        "app/backend/app/api/__init__.py": "empty",
+        "app/backend/app/api/v1/__init__.py": "empty",
+        "app/backend/app/api/v1/api.py": "artifact_available",
+        "app/backend/app/api/v1/endpoints/__init__.py": "empty",
+        "app/backend/app/api/v1/endpoints/auth.py": "partial_artifact",
+        "app/backend/app/api/v1/endpoints/users.py": "needs_creation",
+        "app/backend/app/api/v1/endpoints/admin.py": "needs_creation",
+        
+        # Utils
+        "app/backend/app/utils/__init__.py": "empty",
+        "app/backend/app/utils/email.py": "needs_creation",
+        
+        # Configuration files
+        "app/backend/requirements.txt": "needs_creation",
+        "app/backend/.env": "needs_creation",
+        "app/backend/README.md": "needs_creation",
+    },
+    "frontend_files": {
+        # Pages
+        "app/frontend/src/pages/index.tsx": "artifact_available",
+        "app/frontend/src/pages/login.tsx": "artifact_available", 
+        "app/frontend/src/pages/dashboard.tsx": "artifact_available",
+        "app/frontend/src/pages/onboarding/[token].tsx": "artifact_available",
+        "app/frontend/src/pages/admin/dashboard.tsx": "artifact_available",
+        
+        # Components
+        "app/frontend/src/components/Navigation.tsx": "artifact_available",
+        "app/frontend/src/components/dashboard/DashboardLayout.tsx": "needs_creation",
+        "app/frontend/src/components/dashboard/QuickStats.tsx": "needs_creation",
+        "app/frontend/src/components/dashboard/RecentActivity.tsx": "needs_creation",
+        "app/frontend/src/components/dashboard/CharacterLibrary.tsx": "needs_creation",
+        "app/frontend/src/components/auth/AuthGuard.tsx": "needs_creation",
+        "app/frontend/src/components/onboarding/OnboardingSteps.tsx": "needs_creation",
+        "app/frontend/src/components/admin/UserManagement.tsx": "needs_creation",
+        
+        # Shadcn/ui components (will be generated)
+        "app/frontend/src/components/ui/button.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/card.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/input.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/label.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/textarea.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/select.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/checkbox.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/badge.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/alert.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/table.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/dialog.tsx": "shadcn_ui",
+        "app/frontend/src/components/ui/dropdown-menu.tsx": "shadcn_ui",
+        
+        # Hooks and utilities
+        "app/frontend/src/hooks/useAuth.tsx": "needs_creation",
+        "app/frontend/src/hooks/useApi.tsx": "needs_creation",
+        "app/frontend/src/lib/api.ts": "needs_creation",
+        "app/frontend/src/lib/auth.ts": "needs_creation",
+        "app/frontend/src/lib/utils.ts": "needs_creation",
+        "app/frontend/src/types/auth.ts": "needs_creation",
+        "app/frontend/src/types/user.ts": "needs_creation",
+        "app/frontend/src/context/AuthContext.tsx": "needs_creation",
+        
+        # Configuration files
+        "app/frontend/package.json": "needs_creation",
+        "app/frontend/next.config.js": "needs_creation",
+        "app/frontend/tailwind.config.js": "needs_creation",
+        "app/frontend/tsconfig.json": "needs_creation",
+        "app/frontend/.env.local": "needs_creation",
+        "app/frontend/README.md": "needs_creation",
+        
+        # Public assets
+        "app/frontend/public/favicon.ico": "needs_creation",
+        "app/frontend/public/library-pattern.svg": "needs_creation",
+    }
+}
+
+def check_project_structure(base_path="/opt/livinghistories"):
+    """Check project structure and report status"""
+    
+    print("🔍 Living Histories Project Structure Checker")
+    print("=" * 50)
+    print(f"Checking project at: {base_path}")
+    print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print()
+    
+    base_path = Path(base_path)
+    
+    # Results tracking
+    results = {
+        "existing_files": [],
+        "missing_files": [],
+        "created_directories": [],
+        "artifact_available": [],
+        "needs_creation": [],
+        "shadcn_ui_components": [],
+        "empty_files": []
+    }
+    
+    # Create directories
+    print("📁 Creating directories...")
+    for directory in PROJECT_STRUCTURE["directories"]:
+        dir_path = base_path / directory
+        if not dir_path.exists():
+            dir_path.mkdir(parents=True, exist_ok=True)
+            results["created_directories"].append(str(directory))
+            print(f"✅ Created: {directory}")
+        else:
+            print(f"📁 Exists: {directory}")
+    
+    print()
+    
+    # Check backend files
+    print("🐍 Checking Backend Files...")
+    print("-" * 30)
+    for file_path, status in PROJECT_STRUCTURE["backend_files"].items():
+        full_path = base_path / file_path
+        if full_path.exists():
+            results["existing_files"].append(file_path)
+            file_size = full_path.stat().st_size
+            print(f"✅ EXISTS: {file_path} ({file_size} bytes)")
+        else:
+            results["missing_files"].append(file_path)
+            if status == "artifact_available":
+                results["artifact_available"].append(file_path)
+                print(f"🟡 MISSING: {file_path} (artifact available)")
+            elif status == "empty":
+                results["empty_files"].append(file_path)
+                print(f"🔴 MISSING: {file_path} (empty __init__.py)")
+            elif status == "needs_creation":
+                results["needs_creation"].append(file_path)
+                print(f"🔴 MISSING: {file_path} (needs creation)")
+            elif status == "partial_artifact":
+                results["artifact_available"].append(file_path)
+                print(f"🟡 MISSING: {file_path} (partial artifact available)")
+    
+    print()
+    
+    # Check frontend files
+    print("⚛️  Checking Frontend Files...")
+    print("-" * 30)
+    for file_path, status in PROJECT_STRUCTURE["frontend_files"].items():
+        full_path = base_path / file_path
+        if full_path.exists():
+            results["existing_files"].append(file_path)
+            file_size = full_path.stat().st_size
+            print(f"✅ EXISTS: {file_path} ({file_size} bytes)")
+        else:
+            results["missing_files"].append(file_path)
+            if status == "artifact_available":
+                results["artifact_available"].append(file_path)
+                print(f"🟡 MISSING: {file_path} (artifact available)")
+            elif status == "shadcn_ui":
+                results["shadcn_ui_components"].append(file_path)
+                print(f"🔵 MISSING: {file_path} (shadcn/ui component)")
+            elif status == "needs_creation":
+                results["needs_creation"].append(file_path)
+                print(f"🔴 MISSING: {file_path} (needs creation)")
+    
+    print()
+    
+    # Generate summary report
+    print("📊 SUMMARY REPORT")
+    print("=" * 50)
+    print(f"Total Files Expected: {len(PROJECT_STRUCTURE['backend_files']) + len(PROJECT_STRUCTURE['frontend_files'])}")
+    print(f"Existing Files: {len(results['existing_files'])}")
+    print(f"Missing Files: {len(results['missing_files'])}")
+    print(f"Directories Created: {len(results['created_directories'])}")
+    print()
+    
+    # Priority actions
+    print("🎯 PRIORITY ACTIONS")
+    print("-" * 20)
+    print(f"1. Copy Artifacts ({len(results['artifact_available'])} files)")
+    print(f"2. Create Empty Files ({len(results['empty_files'])} files)")
+    print(f"3. Setup Frontend ({len([f for f in results['needs_creation'] if 'frontend' in f])} files)")
+    print(f"4. Create Backend Logic ({len([f for f in results['needs_creation'] if 'backend' in f])} files)")
+    print(f"5. Install Shadcn/UI ({len(results['shadcn_ui_components'])} components)")
+    print()
+    
+    # Detailed action lists
+    if results["artifact_available"]:
+        print("🟡 FILES WITH ARTIFACTS AVAILABLE:")
+        for file_path in results["artifact_available"]:
+            print(f"   • {file_path}")
+        print()
+    
+    if results["empty_files"]:
+        print("⚪ EMPTY FILES TO CREATE:")
+        for file_path in results["empty_files"]:
+            print(f"   • {file_path}")
+        print()
+    
+    if results["needs_creation"]:
+        print("🔴 FILES THAT NEED TO BE CREATED:")
+        backend_files = [f for f in results["needs_creation"] if "backend" in f]
+        frontend_files = [f for f in results["needs_creation"] if "frontend" in f]
+        
+        if backend_files:
+            print("   Backend Files:")
+            for file_path in backend_files:
+                print(f"     • {file_path}")
+        
+        if frontend_files:
+            print("   Frontend Files:")
+            for file_path in frontend_files:
+                print(f"     • {file_path}")
+        print()
+    
+    if results["shadcn_ui_components"]:
+        print("🔵 SHADCN/UI COMPONENTS TO INSTALL:")
+        components = set()
+        for file_path in results["shadcn_ui_components"]:
+            component_name = Path(file_path).stem
+            components.add(component_name)
+        
+        print(f"   Command: npx shadcn-ui@latest add {' '.join(sorted(components))}")
+        print()
+    
+    # Save detailed report
+    report_file = base_path / "project_structure_report.json"
+    with open(report_file, 'w') as f:
+        json.dump(results, f, indent=2)
+    
+    print(f"📄 Detailed report saved to: {report_file}")
+    
+    # Create empty __init__.py files
+    if results["empty_files"]:
+        print()
+        print("⚪ Creating empty __init__.py files...")
+        for file_path in results["empty_files"]:
+            full_path = base_path / file_path
+            full_path.touch()
+            print(f"✅ Created: {file_path}")
+    
+    return results
+
+if __name__ == "__main__":
+    import sys
+    
+    # Allow custom path as argument
+    if len(sys.argv) > 1:
+        project_path = sys.argv[1]
+    else:
+        project_path = "/opt/livinghistories"
+    
+    try:
+        results = check_project_structure(project_path)
+        
+        print()
+        print("🎉 Project structure check complete!")
+        print(f"Next steps: Copy {len(results['artifact_available'])} available artifacts")
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
